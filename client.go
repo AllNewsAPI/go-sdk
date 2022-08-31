@@ -1,5 +1,5 @@
-// Package freenewsapi provides a client for the Free News API.
-package freenewsapi
+// Package allnewsapi provides a client for the AllNewsAPI.
+package allnewsapi
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Client is a Free News API client.
+// Client is a AllNewsAPI client.
 type Client struct {
 	apiKey     string
 	baseURL    string
@@ -63,7 +63,7 @@ func WithTimeout(timeout time.Duration) ClientOption {
 	}
 }
 
-// NewClient creates a new Free News API client.
+// NewClient creates a new AllNewsAPI client.
 func NewClient(apiKey string, options ...ClientOption) (*Client, error) {
 	if apiKey == "" {
 		return nil, errors.New("API key is required")
@@ -71,7 +71,7 @@ func NewClient(apiKey string, options ...ClientOption) (*Client, error) {
 
 	client := &Client{
 		apiKey:  apiKey,
-		baseURL: "https://api.freenewsapi.com",
+		baseURL: "https://api.allnewsapi.com",
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -195,6 +195,124 @@ func (c *Client) Search(options *SearchOptions) (*SearchResponse, error) {
 
 	// Make the request
 	req, err := http.NewRequest("GET", searchURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error making request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for error responses
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error (status %d): %s", resp.StatusCode, body)
+	}
+
+	// Parse the response
+	var searchResponse SearchResponse
+	err = json.NewDecoder(resp.Body).Decode(&searchResponse)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing response: %w", err)
+	}
+
+	return &searchResponse, nil
+}
+
+// Headlines fetches news headlines.
+func (c *Client) Headlines(options *SearchOptions) (*SearchResponse, error) {
+	params := url.Values{}
+
+	// Add API key
+	params.Add("apikey", c.apiKey)
+
+	// Add query parameters if provided
+	if options != nil {
+		if options.Query != "" {
+			params.Add("q", options.Query)
+		}
+
+		// Handle start date
+		if options.StartDate != nil {
+			var startDate string
+			switch v := options.StartDate.(type) {
+			case string:
+				startDate = v
+			case time.Time:
+				startDate = v.Format(time.RFC3339)
+			default:
+				return nil, errors.New("startDate must be string or time.Time")
+			}
+			params.Add("startDate", startDate)
+		}
+
+		// Handle end date
+		if options.EndDate != nil {
+			var endDate string
+			switch v := options.EndDate.(type) {
+			case string:
+				endDate = v
+			case time.Time:
+				endDate = v.Format(time.RFC3339)
+			default:
+				return nil, errors.New("endDate must be string or time.Time")
+			}
+			params.Add("endDate", endDate)
+		}
+
+		// Handle boolean content parameter
+		if options.Content != nil {
+			if *options.Content {
+				params.Add("content", "true")
+			} else {
+				params.Add("content", "false")
+			}
+		}
+
+		// Handle array parameters
+		if len(options.Lang) > 0 {
+			params.Add("lang", strings.Join(options.Lang, ","))
+		}
+		if len(options.Country) > 0 {
+			params.Add("country", strings.Join(options.Country, ","))
+		}
+		if len(options.Region) > 0 {
+			params.Add("region", strings.Join(options.Region, ","))
+		}
+		if len(options.Category) > 0 {
+			params.Add("category", strings.Join(options.Category, ","))
+		}
+		if len(options.Attributes) > 0 {
+			params.Add("attributes", strings.Join(options.Attributes, ","))
+		}
+		if len(options.Publisher) > 0 {
+			params.Add("publisher", strings.Join(options.Publisher, ","))
+		}
+
+		// Handle integer parameters
+		if options.Max > 0 {
+			params.Add("max", fmt.Sprintf("%d", options.Max))
+		}
+		if options.Page > 0 {
+			params.Add("page", fmt.Sprintf("%d", options.Page))
+		}
+
+		// Handle other string parameters
+		if options.SortBy != "" {
+			params.Add("sortby", options.SortBy)
+		}
+		if options.Format != "" {
+			params.Add("format", options.Format)
+		}
+	}
+
+	// Build request URL
+	headlinesURL := fmt.Sprintf("%s/v1/headlines?%s", c.baseURL, params.Encode())
+
+	// Make the request
+	req, err := http.NewRequest("GET", headlinesURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}

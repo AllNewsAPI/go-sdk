@@ -1,3 +1,3 @@
-module github.com/FreeNews-API/go-sdk
+module github.com/AllNewsAPI/go-sdk
 
 go 1.18

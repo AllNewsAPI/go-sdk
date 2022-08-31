@@ -1,10 +1,10 @@
-# FreeNewsAPI Go SDK
+# AllNewsAPI Go SDK
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/FreeNews-API/go-sdk.svg)](https://pkg.go.dev/github.com/FreeNews-API/go-sdk)
-[![License](https://img.shields.io/github/license/FreeNews-API/go-sdk.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/FreeNews-API/go-sdk)
+[![Go Reference](https://pkg.go.dev/badge/github.com/AllNewsAPI/go-sdk.svg)](https://pkg.go.dev/github.com/AllNewsAPI/go-sdk)
+[![License](https://img.shields.io/github/license/AllNewsAPI/go-sdk.svg)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/AllNewsAPI/go-sdk)
 
-The official **FreeNewsAPI SDK** for the Golang programming language. 
+The official **AllNewsAPI SDK** for the Golang programming language. 
 
 Fetch real-time and historical news articles and headlines from multiple sources around the world.
 
@@ -14,7 +14,7 @@ Fetch real-time and historical news articles and headlines from multiple sources
 ## Installation
 
 ```bash
-go get github.com/FreeNews-API/go-sdk
+go get github.com/AllNewsAPI/go-sdk
 ```
 
 ---
@@ -30,18 +30,18 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/FreeNews-API/go-sdk"
+	"github.com/AllNewsAPI/go-sdk"
 )
 
 func main() {
 	// Create a new client
-	client, err := freenewsapi.NewClient("your-api-key")
+	client, err := allnewsapi.NewClient("your-api-key")
 	if err != nil {
 		log.Fatalf("Error creating client: %v", err)
 	}
 
 	// Simple search
-	results, err := client.Search(&freenewsapi.SearchOptions{
+	results, err := client.Search(&allnewsapi.SearchOptions{
 		Query: "bitcoin",
 		Max:   10,
 	})
@@ -56,6 +56,17 @@ func main() {
 		fmt.Printf("Source: %s\n", article.Source.Name)
 		fmt.Println("---")
 	}
+
+	// Get headlines
+	headlines, err := client.Headlines(&allnewsapi.SearchOptions{
+		Category: []string{"technology"},
+		Max:      5,
+	})
+	if err != nil {
+		log.Fatalf("Error getting headlines: %v", err)
+	}
+
+	fmt.Printf("Found %d headlines\n", headlines.TotalArticles)
 }
 ```
 
@@ -66,7 +77,7 @@ func main() {
 ```go
 // Advanced search with multiple parameters
 includeContent := true
-results, err := client.Search(&freenewsapi.SearchOptions{
+results, err := client.Search(&allnewsapi.SearchOptions{
 	Query:      "AI startups",
 	Lang:       []string{"en", "fr"},
 	Category:   []string{"technology"},
@@ -88,16 +99,22 @@ if err != nil {
 
 #### `NewClient(apiKey string, options ...ClientOption) (*Client, error)`
 
-Creates a new Free News API client.
+Creates a new AllNewsAPI client.
 
-- `apiKey`: Your Free News API key
+- `apiKey`: Your AllNewsAPI key
 - `options`: Optional client configuration (e.g., custom HTTP client)
 
 ---
 
 #### `Search(options *SearchOptions) (*SearchResponse, error)`
 
-Search for news articles with various options. 🔗 [See API Documentation](https://freenewsapi.com/documentation#search-endpoint)  
+Search for news articles with various options. 🔗 [See API Documentation](https://allnewsapi.com/docs#search-endpoint)
+
+---
+
+#### `Headlines(options *SearchOptions) (*SearchResponse, error)`
+
+Fetch news headlines with various options. Uses the same parameters and response format as the Search method. 🔗 [See API Documentation](https://allnewsapi.com/docs#headlines-endpoint)
 
 ---
 
